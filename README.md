@@ -1,1 +1,25 @@
 # EE354_MemoryTest
+
+Link to the state machine diagram: 
+https://drive.google.com/file/d/1wR7WM8XkPMT_f0bBvVhx4qE_nV9Q2Smr/view?usp=sharing
+
+## How the pseudo random generation works
+
+The 4X4 grid is represented by 4, 4bit numbers, 1's represents hits and 0's represent invalid squares
+We start with the given seed and increment values. We just use increment to generate the next row. This continues into the next grid.
+This generates a decently random, yet patterned grid for our memory test, and uses the fact that counters will loop.
+
+### Example
+Seed: 0, Increment 3
+
+#### Grid 1
+0000: Val = 0
+0011: Val = 3
+0110: Val = 6
+1001: Val = 9
+
+#### Grid 2
+1100: Val = 12
+1111: Val = 15
+0010: Val = 2
+0101: Val = 5
