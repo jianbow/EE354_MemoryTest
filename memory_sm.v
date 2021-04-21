@@ -26,8 +26,8 @@
 //module memory (Xin, Yin, Start, Ack, Clk, Reset, 
 //				Done, Quotient, Remainder, Qi, Qc, Qd);
 				
-module memory (SS_in, INC_in, Start, Ack, Clk, Reset, Right, Left, Up, Down, Select;
-				Lives, outA, outB, Qi, Qg, Qfo, Qp, Ql);
+module memory (SS_in, INC_in, Start, Ack, Clk, Reset, Right, Left, Up, Down, Select,
+				Lives, outA, outB, Qi, Qg, Qfo, Qp, Ql, outX, outY);
 				
 //DECLARE ALL MY INPUTS AND OUTPUTS
 
@@ -36,7 +36,8 @@ input [3:0] SS_in, INC_in;
 input Start, Ack, Clk, Reset, Right, Left, Up, Down, Select;
 output Lives;
 output Qi, Qg, Qfo, Qp, Ql;
-output outA, outB
+output outA, outB;
+output outX, outY;
 
 // DECLARE ALL THE LOCAL VARIABLES
 
@@ -161,4 +162,8 @@ always @(posedge Clk, posedge Reset)
 	//allow top to see what the arrays are.
 	assign outA = A;
 	assign outB = B;
+	//allow top to see what square we are currently one
+	assign outX = X;
+	assign outY = Y;
+	assign Lives = lives;
 endmodule  // memory_test
