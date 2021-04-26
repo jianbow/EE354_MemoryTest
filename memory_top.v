@@ -55,7 +55,7 @@ module memory_top	(
 	wire [1:0] 	ssdscan_clk;
 	
 	wire [3:0] 	SS_in, INC_in;
-	wire [3:0] 	X, Y, Lives;
+	wire [3:0] 	outX, outY, Lives;
 	wire 		Start, Ack;
 	//for all the states
 	wire 		Qi, Qg, Qfo, Qp, Ql;
@@ -68,8 +68,8 @@ module memory_top	(
 	reg [7:0]  	SSD_CATHODES;
 	wire 		Right, Left, Up, Down, Select;
 	//NOT SURE IF THIS SHOULD BE REG OR WIRE? i think reg bc endpoint
-	reg [3:0] A [9:0];
-	reg [3:0] B [9:0];
+	
+	wire [3:0] outA0, outA1, outA2, outA3, outB0, outB1, outB2, outB3;
 	
 //------------	
 // Disable the three memories so that they do not interfere with the rest of the design.
@@ -131,7 +131,7 @@ module memory_top	(
 	//TODO
 	//MIGHT NEED TO CHECK THIS
 	//am i allowed to do this?
-	assign Start = Sw8; assign Ack = Sw8; // This was used in the divider_simple and also here
+	assign Start = BtnC; assign Ack = BtnC; // This was used in the divider_simple and also here
 	
 	// Unlike in the divider_simple, here we use one button BtnU to represent SCEN
 	// Instantiate the debouncer	// module ee201_debouncer(CLK, RESET, PB, DPB, SCEN, MCEN, CCEN);
@@ -148,14 +148,29 @@ ee201_debouncer #(.N_dc(25)) ee201_debouncer_1
 /*divider divider_1(.Xin(Xin), .Yin(Yin), .Start(Start), .Ack(Ack), .Clk(sys_clk), .Reset(Reset), 
 				.SCEN(SCEN), .Done(Done), .Quotient(Quotient), .Remainder(Remainder), .Qi(Qi), .Qc(Qc), .Qd(Qd) );*/
 				
-memory mem_test(.SS_in(SS_in), .INC_in(INC_in), .Start(Start), .Ack(Ack), .Clk(sys_clk), .Reset(Reset), .Right(Right), .Left(Left), .Up(Up), .Down(Down), .Select(Select),
-				.Lives(Lives), .outA(A), .outB(B), .Qi(Qi), .Qg(Qg), .Qfo(Qfo), .Qp(Qp), .Ql(Ql), .outX(X), .outY(Y));
+ee201_debouncer #(.N_dc(25)) ee201_debouncer_SACK 
+        (.CLK(sys_clk), .RESET(Reset), .PB(BtnC), .DPB( ), .SCEN(SCENSACK), .MCEN( ), .CCEN( ));
+
+ee201_debouncer #(.N_dc(25)) ee201_debouncer_R 
+        (.CLK(sys_clk), .RESET(Reset), .PB(BtnR), .DPB( ), .SCEN(SCENR), .MCEN( ), .CCEN( ));
+        
+ee201_debouncer #(.N_dc(25)) ee201_debouncer_L
+        (.CLK(sys_clk), .RESET(Reset), .PB(BtnL), .DPB( ), .SCEN(SCENL), .MCEN( ), .CCEN( ));
+        
+ee201_debouncer #(.N_dc(25)) ee201_debouncer_D
+        (.CLK(sys_clk), .RESET(Reset), .PB(BtnD), .DPB( ), .SCEN(SCEND), .MCEN( ), .CCEN( ));
+        
+ee201_debouncer #(.N_dc(25)) ee201_debouncer_U
+        (.CLK(sys_clk), .RESET(Reset), .PB(BtnU), .DPB( ), .SCEN(SCENU), .MCEN( ), .CCEN( ));
+				
+memory mem_test(.SS_in(SS_in), .INC_in(INC_in), .Start(SCENSACK), .Ack(SCENSACK), .Clk(sys_clk), .Reset(Reset), .Right(SCENR), .Left(SCENL), .Up(SCENU), .Down(SCEND), .Select(SCENSACK),
+				.Lives(Lives), .outA0(outA0), .outA1(outA1), .outA2(outA2), .outA3(outA3), .outB0(outB0), .outB1(outB1), .outB2(outB2), .outB3(outB3), .Qi(Qi), .Qg(Qg), .Qfo(Qfo), .Qp(Qp), .Ql(Ql), .outX(outX), .outY(outY), .unos(unos));
 
 //------------
 // OUTPUT: LEDS
 	
 	assign {Ld8, Ld7, Ld6, Ld5, Ld4} = {Qi, Qg, Qfo, Qp, Ql};
-	assign {Ld3, Ld2, Ld1, Ld0} = {BtnL, BtnU, BtnR, BtnD}; // We do not want to put SCEN in place of BtnU here as the Ld2 will be on for just 10ns!
+	assign {Ld3, Ld2, Ld1, Ld0} = {Start,Right,Left,Up}; // We do not want to put SCEN in place of BtnU here as the Ld2 will be on for just 10ns!
 
 //------------
 // SSD (Seven Segment Display)
@@ -165,8 +180,8 @@ memory mem_test(.SS_in(SS_in), .INC_in(INC_in), .Start(Start), .Ack(Ack), .Clk(s
 	//SSDs display Xin, Yin, Quotient, and Reminder  
 	assign SSD3 = SS_in;
 	assign SSD2 = INC_in;
-	assign SSD1 = X;
-	assign SSD0 = Y;
+	assign SSD1 = outX;
+	assign SSD0 = outY;
 
 
 	// need a scan clk for the seven segment display 

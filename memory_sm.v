@@ -27,27 +27,40 @@
 //				Done, Quotient, Remainder, Qi, Qc, Qd);
 				
 module memory (SS_in, INC_in, Start, Ack, Clk, Reset, Right, Left, Up, Down, Select,
-				Lives, outA, outB, Qi, Qg, Qfo, Qp, Ql, outX, outY);
+				Lives, outA0, outA1, outA2, outA3, outB0, outB1, outB2, outB3, Qi, Qg, Qfo, Qp, Ql, outX, outY, unos);
 				
 //DECLARE ALL MY INPUTS AND OUTPUTS
 
 //both 4 bit values
 input [3:0] SS_in, INC_in;
 input Start, Ack, Clk, Reset, Right, Left, Up, Down, Select;
-output Lives;
+output [3:0] Lives;
 output Qi, Qg, Qfo, Qp, Ql;
-output outA, outB;
-output outX, outY;
+output [3:0] outA0, outA1, outA2, outA3, outB0, outB1, outB2, outB3;
+output [3:0] outX, outY;
+output [3:0] unos;
 
 // DECLARE ALL THE LOCAL VARIABLES
 
-reg[4:0] ones, seed, increment, score, state;
+reg[4:0] ones;
+reg[4:0] seed;
+reg[4:0] increment;
+reg[4:0] score;
+reg[4:0] state;
 // Declare 2, 4X4 Arrays
-reg [3:0] A [9:0];
-reg [3:0] B [9:0];
+
+reg [3:0] findones;
+
+reg [3:0] A [3:0];
+reg [3:0] B [3:0];
+
 // NOTE : positive X is to the right, positive Y is down
-reg [2:0] X,Y,I, searchX, searchY;
-reg [1:0] lives; //max 3;
+reg [2:0] X;
+reg [2:0] Y;
+reg [2:0] I;
+reg [2:0] searchX;
+reg [2:0] searchY;
+reg [3:0] lives; //max 3;
 
 
 
@@ -55,9 +68,9 @@ reg [1:0] lives; //max 3;
 localparam
 INITIAL = 5'b00001,
 GENERATE = 5'b00010,
-FINDONES = 5'b00100;
-PLAY = 5'01000;
-LOSE = 5'10000;
+FINDONES = 5'b00100,
+PLAY = 5'b01000,
+LOSE = 5'b10000;
 
 always @(posedge Clk, posedge Reset) 
   begin  : memory_test
@@ -75,16 +88,17 @@ always @(posedge Clk, posedge Reset)
 		         if (Start)
 		           state <= GENERATE;
 		         // RTL
-				   X <= 0;
-				   Y <= 0;
-				   I <= 0;
-				   searchX <= 0;
-				   searchY <= 0;
+				   X <= 2'b00;
+				   Y <= 2'b00;
+				   I <= 2'b00;
+				   searchX <= 2'b00;
+				   searchY <= 2'b00;
 				   ones <= 0;
 				   seed <= SS_in;
 				   increment <= INC_in;
 				   score <= 0;
 				   lives <= 3;
+				   findones<=0;
 	          end
 	        GENERATE:
 	          begin
@@ -105,18 +119,30 @@ always @(posedge Clk, posedge Reset)
 	          begin  
 				// STATE TRANSITION
 				if(searchX == 3 && searchY == 3) //if we went through the whole thing, this is very inefficient unfortunately
-					state <= PLAY;
+				    begin
+					   state <= PLAY;
+					   searchX <= 0;
+					   searchY <= 0;
+                   end
 				// RTL
 				if(A[searchX][searchY] == 1)
 					findones <= findones + 1;
 				if(searchX == 3)//if dones with this row
-					searchX <= 0;
+				    begin
+                        searchX <= 0;
+                        searchY <= searchY + 1;
+					end
+                else
+                    searchX <= searchX + 1;
 	          end    
 			PLAY:
 	          begin  
 				// STATE TRANSITION
-				if(findones == 0)
+				if(findones == 0) begin
 					state <= GENERATE;
+					X <= 0;
+					Y <= 0;
+					end
 				else if(findones != 0 && lives == 0)
 					state <= LOSE;
 				//else, stay here
@@ -134,9 +160,10 @@ always @(posedge Clk, posedge Reset)
 				//manage select
 				else if(Select)
 					begin
-						if(A[X][Y] == 1)
+						if(A[X][Y] == 1) begin
 							B[X][Y] <= 1;
 							findones <= findones - 1;
+							end
 						else
 							lives <= lives - 1;
 					end
@@ -156,14 +183,23 @@ always @(posedge Clk, posedge Reset)
   end
  
 	 //OFL
-	 assign {Qi, Qg, Qfo, Qp, Ql} = state;
+	 //assign {Qi, Qg, Qfo, Qp, Ql} = state;
+	 assign {Ql, Qp, Qfo, Qg, Qi} = state;
 	 //output so we can display
 	 assign Lives = lives;
 	//allow top to see what the arrays are.
-	assign outA = A;
-	assign outB = B;
+	assign outA0 = A[0];
+	assign outA1 = A[1];
+	assign outA2 = A[2];
+	assign outA3 = A[3];
+	assign outB0 = B[0];
+	assign outB1 = B[1];
+	assign outB2 = B[2];
+	assign outB3 = B[3];
 	//allow top to see what square we are currently one
+	//assign outX = X;
+	//assign outY = Y;
 	assign outX = X;
 	assign outY = Y;
-	assign Lives = lives;
+	assign unos = findones;
 endmodule  // memory_test
