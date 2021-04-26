@@ -23,3 +23,12 @@ Seed: 0, Increment 3
 1111: Val = 15<br />
 0010: Val = 2<br />
 0101: Val = 5<br />
+
+## Files for Simulation
+* memory_sm.v
+* memory_tb.v
+## Files for Synthesis
+* ee201_debounce_DPB_SCEN_CCEN_MCEN.v
+* memory_sm.v
+* memory_top.v
+* memory_top.xdc
