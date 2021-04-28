@@ -120,10 +120,15 @@ module ee354_memory;
 		#1;
 		Start=0;
 		//leaving the q_I state, so start keeping track of the clocks taken
-		wait(Qp); //wait until q_Done signal is a 1
-		#1;
+		wait(Qfo); //wait until q_Done signal is a 1
 		$display("A0: %d A1: %d, A2: %d, A2: %d", outA0, outA1, outA2, outA3);
-		
+        #200;
+        @(posedge Clk);
+		#1;
+		Start=1;
+		@(posedge Clk);
+		#1;
+		Start=0;
 		//i just want to see what the A values are
 		//SAMPLE PLAY THORUGH OF 1,2,3,4
 		@(posedge Clk);
@@ -200,7 +205,15 @@ module ee354_memory;
 		Select=0;
 		
 		//SAMPLE ERROR PLAYTHROUGH
-        @(posedge Qp);
+        @(posedge Qfo); //wait until q_Done signal is a 1
+		$display("A0: %d A1: %d, A2: %d, A2: %d", outA0, outA1, outA2, outA3);
+        #200;
+        @(posedge Clk);
+		#1;
+		Start=1;
+		@(posedge Clk);
+		#1;
+		Start=0;
 		@(posedge Clk);
 		#1;
 		Down=1;

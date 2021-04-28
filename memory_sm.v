@@ -61,6 +61,7 @@ reg [2:0] I;
 reg [2:0] searchX;
 reg [2:0] searchY;
 reg [3:0] lives; //max 3;
+reg flag;
 
 
 
@@ -105,10 +106,12 @@ always @(posedge Clk, posedge Reset)
 		         // STATE TRANSITION
 		         if (I == 3)
 		           state <= FINDONES;
+		           flag <= 0;
 		         // RTL
 		         if (I < 4) //or I<=3, last operation with I==3
 		           begin
 		             A[I] <= seed;
+		             B[I] <= 0;
 					 seed <= seed + increment;
 					 I <= I+1;
 		           end
@@ -118,22 +121,26 @@ always @(posedge Clk, posedge Reset)
 	        FINDONES:
 	          begin  
 				// STATE TRANSITION
-				if(searchX == 3 && searchY == 3) //if we went through the whole thing, this is very inefficient unfortunately
+                if(searchX == 3 && searchY == 3 && Start) //if we went through the whole thing, this is very inefficient unfortunately
 				    begin
 					   state <= PLAY;
 					   searchX <= 0;
 					   searchY <= 0;
                    end
 				// RTL
-				if(A[searchX][searchY] == 1)
-					findones <= findones + 1;
-				if(searchX == 3)//if dones with this row
-				    begin
-                        searchX <= 0;
-                        searchY <= searchY + 1;
-					end
-                else
-                    searchX <= searchX + 1;
+				if(~flag) begin
+				    if(searchX == 3 && searchY ==3)
+				        flag <= 1;
+                    if(A[searchX][searchY] == 1)
+                        findones <= findones + 1;
+                    if(searchX == 3 && searchY != 3)//if dones with this row
+                        begin
+                            searchX <= 0;
+                            searchY <= searchY + 1;
+                        end
+                    else if(searchX != 3)
+                        searchX <= searchX + 1;
+                end
 	          end    
 			PLAY:
 	          begin  
@@ -160,11 +167,11 @@ always @(posedge Clk, posedge Reset)
 				//manage select
 				else if(Select)
 					begin
-						if(A[X][Y] == 1) begin
+						if(A[X][Y] == 1 && B[X][Y] == 0) begin
 							B[X][Y] <= 1;
 							findones <= findones - 1;
 							end
-						else
+						else if(A[X][Y] == 0)
 							lives <= lives - 1;
 					end
 				//if all found, increase score;
