@@ -57,7 +57,7 @@ module memory_top	(
 	/*  LOCAL SIGNALS */
 	wire		Reset, ClkPort;
 	wire		board_clk, sys_clk;
-	wire [1:0] 	ssdscan_clk;
+	wire [2:0] 	ssdscan_clk;
 	
 	
 	wire [3:0] 	SS_in, INC_in;
@@ -75,7 +75,7 @@ module memory_top	(
 	reg [26:0]	DIV_CLK;
 // SSD (Seven Segment Display)
 	reg [3:0]	SSD;
-	wire [3:0]	SSD3, SSD2, SSD1, SSD0;
+	wire [3:0]	SSD4, SSD3, SSD2, SSD1, SSD0;
 	reg [7:0]  	SSD_CATHODES;
 	wire 		Right, Left, Up, Down, Select;
 	//NOT SURE IF THIS SHOULD BE REG OR WIRE? i think reg bc endpoint
@@ -204,6 +204,7 @@ block_controller sc(.bright(bright), .X(outX), .Y(outY), .A0(outA0), .A1(outA1),
 	// wire [3:0]	SSD3, SSD2, SSD1, SSD0;
 	
 	//SSDs display Xin, Yin, Quotient, and Reminder  
+	assign SSD4 = Lives;
 	assign SSD3 = SS_in;
 	assign SSD2 = INC_in;
 	assign SSD1 = outX;
@@ -231,22 +232,24 @@ block_controller sc(.bright(bright), .X(outX), .Y(outY), .A0(outA0), .A1(outA1),
 	//  DIV_CLK[19]       |___________|           |___________|
 	//
 	
-	assign ssdscan_clk = DIV_CLK[19:18];
+	assign ssdscan_clk = DIV_CLK[19:17];
 
-	assign An0	= !(~(ssdscan_clk[1]) && ~(ssdscan_clk[0]));  // when ssdscan_clk = 00
-	assign An1	= !(~(ssdscan_clk[1]) &&  (ssdscan_clk[0]));  // when ssdscan_clk = 01
-	assign An2	=  !((ssdscan_clk[1]) && ~(ssdscan_clk[0]));  // when ssdscan_clk = 10
-	assign An3	=  !((ssdscan_clk[1]) &&  (ssdscan_clk[0]));  // when ssdscan_clk = 11
-	assign {An7, An6, An5, An4} = 4'b1111;
+	assign An0	= !(~(ssdscan_clk[2]) && ~(ssdscan_clk[1]) && ~(ssdscan_clk[0]));  // when ssdscan_clk = 000
+	assign An1	= !(~(ssdscan_clk[2]) && ~(ssdscan_clk[1]) &&  (ssdscan_clk[0]));  // when ssdscan_clk = 001
+	assign An2	=  !(~(ssdscan_clk[2]) && (ssdscan_clk[1]) && ~(ssdscan_clk[0]));  // when ssdscan_clk = 010
+	assign An3	=  !(~(ssdscan_clk[2]) && (ssdscan_clk[1]) &&  (ssdscan_clk[0]));  // when ssdscan_clk = 011
+	assign An4  = !((ssdscan_clk[2]) && ~(ssdscan_clk[1]) && ~(ssdscan_clk[0]));  // when ssdscan_clk = 000
+	assign {An7, An6, An5} = 3'b111;
 	
 	
-	always @ (ssdscan_clk, SSD0, SSD1, SSD2, SSD3)
+	always @ (ssdscan_clk, SSD0, SSD1, SSD2, SSD3, SSD4)
 	begin : SSD_SCAN_OUT
 		case (ssdscan_clk) 
-				  2'b00: SSD = SSD0;
-				  2'b01: SSD = SSD1;
-				  2'b10: SSD = SSD2;
-				  2'b11: SSD = SSD3;
+				  3'b000: SSD = SSD0;
+				  3'b001: SSD = SSD1;
+				  3'b010: SSD = SSD2;
+				  3'b011: SSD = SSD3;
+				  3'b100: SSD = SSD4;
 		endcase 
 	end
 
