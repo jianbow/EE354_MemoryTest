@@ -187,7 +187,7 @@ always @(posedge Clk, posedge Reset)
 							B[X][Y] <= 1;
 							findones <= findones - 1;
 						end
-						else if(A[X][Y] == 0)
+						else if(A[X][Y] == 0 && B[X][Y] == 0)
 						begin
 						    B[X][Y] <= 1;
 							lives <= lives - 1;
