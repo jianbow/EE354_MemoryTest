@@ -24,7 +24,9 @@ module memory_top	(
 		An3, An2, An1, An0,			       // 4 anodes
 		An7, An6, An5, An4,                // another 4 anodes (need turned off)
 		Ca, Cb, Cc, Cd, Ce, Cf, Cg,        // 7 cathodes
-		Dp                                 // Dot Point Cathode on SSDs
+		Dp,                                 // Dot Point Cathode on SSDs
+		hSync, vSync,
+		vgaR, vgaB, vgaG
 	  );
 
 	 
@@ -47,6 +49,9 @@ module memory_top	(
 	output 	Cg, Cf, Ce, Cd, Cc, Cb, Ca, Dp;
 	output 	An0, An1, An2, An3;	
 	output  An4, An5, An6, An7;
+	//VGA signal
+	output hSync, vSync;
+	output [3:0] vgaR, vgaG, vgaB;
 
 	
 	/*  LOCAL SIGNALS */
@@ -54,11 +59,17 @@ module memory_top	(
 	wire		board_clk, sys_clk;
 	wire [1:0] 	ssdscan_clk;
 	
+	
 	wire [3:0] 	SS_in, INC_in;
 	wire [3:0] 	outX, outY, Lives;
 	wire 		Start, Ack;
 	//for all the states
-	wire 		Qi, Qg, Qfo, Qp, Ql;
+	wire Qi, Qg, Qfo, Qp, Ql;
+	
+	//RGB
+	wire [11:0] rgb;
+	wire bright;
+	wire[9:0] hc, vc;
 
 // to produce divided clock
 	reg [26:0]	DIV_CLK;
@@ -70,6 +81,11 @@ module memory_top	(
 	//NOT SURE IF THIS SHOULD BE REG OR WIRE? i think reg bc endpoint
 	
 	wire [3:0] outA0, outA1, outA2, outA3, outB0, outB1, outB2, outB3;
+	
+	
+	//Move clk for moving selected square
+	//wire move_clk;
+	//assign move_clk=DIV_CLK[19]; //slower clock to drive the movement of objects on the vga screen
 	
 //------------	
 // Disable the three memories so that they do not interfere with the rest of the design.
@@ -131,7 +147,8 @@ module memory_top	(
 	//TODO
 	//MIGHT NEED TO CHECK THIS
 	//am i allowed to do this?
-	assign Start = BtnC; assign Ack = BtnC; // This was used in the divider_simple and also here
+	assign Start = BtnC;
+    assign Ack = BtnC; // This was used in the divider_simple and also here
 	
 	// Unlike in the divider_simple, here we use one button BtnU to represent SCEN
 	// Instantiate the debouncer	// module ee201_debouncer(CLK, RESET, PB, DPB, SCEN, MCEN, CCEN);
@@ -166,11 +183,20 @@ ee201_debouncer #(.N_dc(25)) ee201_debouncer_U
 memory mem_test(.SS_in(SS_in), .INC_in(INC_in), .Start(SCENSACK), .Ack(SCENSACK), .Clk(sys_clk), .Reset(Reset), .Right(SCENR), .Left(SCENL), .Up(SCENU), .Down(SCEND), .Select(SCENSACK),
 				.Lives(Lives), .outA0(outA0), .outA1(outA1), .outA2(outA2), .outA3(outA3), .outB0(outB0), .outB1(outB1), .outB2(outB2), .outB3(outB3), .Qi(Qi), .Qg(Qg), .Qfo(Qfo), .Qp(Qp), .Ql(Ql), .outX(outX), .outY(outY), .unos(unos));
 
+display_controller dc(.clk(sys_clk), .hSync(hSync), .vSync(vSync), .bright(bright), .hCount(hc), .vCount(vc));
+
+block_controller sc(.bright(bright), .X(outX), .Y(outY), .A0(outA0), .A1(outA1), .A2(outA2), .A3(outA3), .B0(outB0), .B1(outB1), .B2(outB2), .B3(outB3), .Qi(Qi), .Qg(Qg), .Qfo(Qfo), .Qp(Qp), .Ql(Ql), .hCount(hc), .vCount(vc), .rgb(rgb));
+
 //------------
 // OUTPUT: LEDS
 	
 	assign {Ld8, Ld7, Ld6, Ld5, Ld4} = {Qi, Qg, Qfo, Qp, Ql};
 	assign {Ld3, Ld2, Ld1, Ld0} = {Start,Right,Left,Up}; // We do not want to put SCEN in place of BtnU here as the Ld2 will be on for just 10ns!
+	
+	//
+	assign vgaR = rgb[11 : 8];
+	assign vgaG = rgb[7  : 4];
+	assign vgaB = rgb[3  : 0];
 
 //------------
 // SSD (Seven Segment Display)

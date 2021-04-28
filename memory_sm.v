@@ -37,7 +37,7 @@ input Start, Ack, Clk, Reset, Right, Left, Up, Down, Select;
 output [3:0] Lives;
 output Qi, Qg, Qfo, Qp, Ql;
 output [3:0] outA0, outA1, outA2, outA3, outB0, outB1, outB2, outB3;
-output [3:0] outX, outY;
+output [1:0] outX, outY;
 output [3:0] unos;
 
 // DECLARE ALL THE LOCAL VARIABLES
@@ -55,13 +55,13 @@ reg [3:0] A [3:0];
 reg [3:0] B [3:0];
 
 // NOTE : positive X is to the right, positive Y is down
-reg [2:0] X;
-reg [2:0] Y;
+reg [1:0] X;
+reg [1:0] Y;
 reg [2:0] I;
 reg [2:0] searchX;
 reg [2:0] searchY;
 reg [3:0] lives; //max 3;
-
+reg flag;
 
 
 
@@ -77,6 +77,10 @@ always @(posedge Clk, posedge Reset)
     if (Reset)
        begin
 		  state <= INITIAL;
+		  B[0][3:0] = 4'bXXXX;
+		  B[1][3:0] = 4'bXXXX;
+	      B[2][3:0] = 4'bXXXX;
+	      B[3][3:0] = 4'bXXXX;
        end
     else
        begin
@@ -99,16 +103,22 @@ always @(posedge Clk, posedge Reset)
 				   score <= 0;
 				   lives <= 3;
 				   findones<=0;
+				   B[0][3:0] = 4'b0000;
+				   B[1][3:0] = 4'b0000;
+				   B[2][3:0] = 4'b0000;
+				   B[3][3:0] = 4'b0000;
 	          end
 	        GENERATE:
 	          begin
 		         // STATE TRANSITION
 		         if (I == 3)
 		           state <= FINDONES;
+		           flag <= 0;
 		         // RTL
 		         if (I < 4) //or I<=3, last operation with I==3
 		           begin
 		             A[I] <= seed;
+		             B[I] <= 0;
 					 seed <= seed + increment;
 					 I <= I+1;
 		           end
@@ -118,22 +128,26 @@ always @(posedge Clk, posedge Reset)
 	        FINDONES:
 	          begin  
 				// STATE TRANSITION
-				if(searchX == 3 && searchY == 3) //if we went through the whole thing, this is very inefficient unfortunately
+				if(searchX == 3 && searchY == 3 && Start) //if we went through the whole thing, this is very inefficient unfortunately
 				    begin
 					   state <= PLAY;
 					   searchX <= 0;
 					   searchY <= 0;
                    end
 				// RTL
-				if(A[searchX][searchY] == 1)
-					findones <= findones + 1;
-				if(searchX == 3)//if dones with this row
-				    begin
-                        searchX <= 0;
-                        searchY <= searchY + 1;
-					end
-                else
-                    searchX <= searchX + 1;
+				if(~flag) begin
+				    if(searchX == 3 && searchY ==3)
+				        flag <= 1;
+                    if(A[searchX][searchY] == 1)
+                        findones <= findones + 1;
+                    if(searchX == 3 && searchY != 3)//if dones with this row
+                        begin
+                            searchX <= 0;
+                            searchY <= searchY + 1;
+                        end
+                    else if(searchX != 3)
+                        searchX <= searchX + 1;
+                end
 	          end    
 			PLAY:
 	          begin  
@@ -149,23 +163,35 @@ always @(posedge Clk, posedge Reset)
 				// RTL
 				
 				//manage movement
-				if(Right && X < 3)
-					X <= X + 1;
-				else if(Left && X > 0)
-					X <= X - 1;
-				else if(Up && Y > 0)
-					Y <= Y - 1;
-				else if(Down && Y < 3)
+				if(Right && Y < 3)
 					Y <= Y + 1;
+				else if (Right && Y==3)
+				    Y<= 0;
+				if(Left && Y > 0)
+					Y <= Y - 1;
+				else if (Left && Y==0)
+				    Y <= 3;
+				if(Up && X > 0)
+					X <= X - 1;
+				else if (Up && X==0)
+				    X<= 3;
+				if(Down && X < 3)
+					X <= X + 1;
+				else if(Down && X==3)
+				    X<= 0;
 				//manage select
-				else if(Select)
+				if(Select)
 					begin
-						if(A[X][Y] == 1) begin
+						if(A[X][Y] == 1 && B[X][Y] == 0)
+						begin
 							B[X][Y] <= 1;
 							findones <= findones - 1;
-							end
-						else
+						end
+						else if(A[X][Y] == 0)
+						begin
+						    B[X][Y] <= 1;
 							lives <= lives - 1;
+						end
 					end
 				//if all found, increase score;
 				if(findones == 0)
