@@ -81,6 +81,7 @@ module memory_top	(
 	//NOT SURE IF THIS SHOULD BE REG OR WIRE? i think reg bc endpoint
 	
 	wire [3:0] outA0, outA1, outA2, outA3, outB0, outB1, outB2, outB3;
+	wire [3:0] outScore;
 	
 	
 	//Move clk for moving selected square
@@ -181,7 +182,7 @@ ee201_debouncer #(.N_dc(25)) ee201_debouncer_U
         (.CLK(sys_clk), .RESET(Reset), .PB(BtnU), .DPB( ), .SCEN(SCENU), .MCEN( ), .CCEN( ));
 				
 memory mem_test(.SS_in(SS_in), .INC_in(INC_in), .Start(SCENSACK), .Ack(SCENSACK), .Clk(sys_clk), .Reset(Reset), .Right(SCENR), .Left(SCENL), .Up(SCENU), .Down(SCEND), .Select(SCENSACK),
-				.Lives(Lives), .outA0(outA0), .outA1(outA1), .outA2(outA2), .outA3(outA3), .outB0(outB0), .outB1(outB1), .outB2(outB2), .outB3(outB3), .Qi(Qi), .Qg(Qg), .Qfo(Qfo), .Qp(Qp), .Ql(Ql), .outX(outX), .outY(outY), .unos(unos));
+				.Lives(Lives), .outScore(outScore), .outA0(outA0), .outA1(outA1), .outA2(outA2), .outA3(outA3), .outB0(outB0), .outB1(outB1), .outB2(outB2), .outB3(outB3), .Qi(Qi), .Qg(Qg), .Qfo(Qfo), .Qp(Qp), .Ql(Ql), .outX(outX), .outY(outY), .unos(unos));
 
 display_controller dc(.clk(sys_clk), .hSync(hSync), .vSync(vSync), .bright(bright), .hCount(hc), .vCount(vc));
 
@@ -204,6 +205,7 @@ block_controller sc(.bright(bright), .X(outX), .Y(outY), .A0(outA0), .A1(outA1),
 	// wire [3:0]	SSD3, SSD2, SSD1, SSD0;
 	
 	//SSDs display Xin, Yin, Quotient, and Reminder  
+	assign SSD7 = outScore;
 	assign SSD4 = Lives;
 	assign SSD3 = SS_in;
 	assign SSD2 = INC_in;
@@ -238,11 +240,12 @@ block_controller sc(.bright(bright), .X(outX), .Y(outY), .A0(outA0), .A1(outA1),
 	assign An1	= !(~(ssdscan_clk[2]) && ~(ssdscan_clk[1]) &&  (ssdscan_clk[0]));  // when ssdscan_clk = 001
 	assign An2	=  !(~(ssdscan_clk[2]) && (ssdscan_clk[1]) && ~(ssdscan_clk[0]));  // when ssdscan_clk = 010
 	assign An3	=  !(~(ssdscan_clk[2]) && (ssdscan_clk[1]) &&  (ssdscan_clk[0]));  // when ssdscan_clk = 011
-	assign An4  = !((ssdscan_clk[2]) && ~(ssdscan_clk[1]) && ~(ssdscan_clk[0]));  // when ssdscan_clk = 000
-	assign {An7, An6, An5} = 3'b111;
+	assign An4  = !((ssdscan_clk[2]) && ~(ssdscan_clk[1]) && ~(ssdscan_clk[0]));  // when ssdscan_clk = 100
+	assign An7  = !((ssdscan_clk[2]) && ~(ssdscan_clk[1]) && (ssdscan_clk[0]));  // when ssdscan_clk = 101
+	assign {An6, An5} = 2'b11;
 	
 	
-	always @ (ssdscan_clk, SSD0, SSD1, SSD2, SSD3, SSD4)
+	always @ (ssdscan_clk, SSD0, SSD1, SSD2, SSD3, SSD4, SSD7)
 	begin : SSD_SCAN_OUT
 		case (ssdscan_clk) 
 				  3'b000: SSD = SSD0;
@@ -250,6 +253,7 @@ block_controller sc(.bright(bright), .X(outX), .Y(outY), .A0(outA0), .A1(outA1),
 				  3'b010: SSD = SSD2;
 				  3'b011: SSD = SSD3;
 				  3'b100: SSD = SSD4;
+				  3'b101: SSD = SSD7;
 		endcase 
 	end
 

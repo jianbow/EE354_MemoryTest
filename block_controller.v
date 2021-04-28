@@ -3,7 +3,6 @@
 module block_controller(
 	//input clk, //this clock must be a slow enough clock to view the changing positions of the objects
 	input bright,
-	input rst,
 	input [1:0] X,
 	input [1:0] Y,
 	input [3:0] A0,
@@ -76,7 +75,7 @@ module block_controller(
 			rgb = 12'b0000_0000_0000;
 		else if (guess_correct || sQg)
 			rgb = GREEN;
-		else if (guess_wrong || sQfo)
+		else if (guess_wrong || sQfo || (sQl && sLose))
 			rgb = RED;
 		else if (selected || sQi)
 			rgb = BLUE;
@@ -86,6 +85,7 @@ module block_controller(
 			rgb=BACKGROUND;
 	end
 	
+	assign sLose = ((vCount >= SQUARE11Y-20) && (vCount <=SQUARE11Y-10)) && ((hCount >= SQUARE11X) && (hCount <= SQUARE11X + 10)) || ((vCount >= SQUARE11Y-40) && (vCount <=SQUARE11Y-30)) && ((hCount >= SQUARE11X) && (hCount <= SQUARE11X + 10)) || ((vCount >= SQUARE11Y-30) && (vCount <=SQUARE11Y-20)) && ((hCount >= SQUARE11X) && (hCount <= SQUARE11X + 10)) || ((vCount >= SQUARE11Y-20) && (vCount <=SQUARE11Y-10)) && ((hCount >= SQUARE11X+10) && (hCount <= SQUARE11X + 20));
 	assign sQi = ((vCount >= SQUARE11Y-20) && (vCount <=SQUARE11Y-10)) && ((hCount >= SQUARE11X) && (hCount <= SQUARE11X + 10)) && Qi;
 	assign sQg = ((vCount >= SQUARE11Y-20) && (vCount <=SQUARE11Y-10)) && ((hCount >= SQUARE11X) && (hCount <= SQUARE11X + 10)) && Qg;
 	assign sQfo = ((vCount >= SQUARE11Y-20) && (vCount <=SQUARE11Y-10)) && ((hCount >= SQUARE11X) && (hCount <= SQUARE11X + 10)) && Qfo;
@@ -114,13 +114,20 @@ module block_controller(
 
 
 
-	assign guess_wrong = !Qi && ((((!A0[0] && B0[0])|| Ql) && SQUARE11) ||  (((!A0[1] && B0[1]) || Ql) && SQUARE12) || (((!A0[2] && B0[2]) ||Ql) && SQUARE13) || (!A0[3] && B0[3] && SQUARE14) || (!A1[0] && B1[0] && SQUARE21) || (!A1[1] && B1[1] && SQUARE22) || (!A1[2] && B1[2] && SQUARE23) || (!A1[3] && B1[3] && SQUARE24) ||
-		(!A2[0] && B2[0] && SQUARE31) ||  (!A2[1] && B2[1] && SQUARE32) || (!A2[2] && B2[2] && SQUARE33) || (!A2[3] && B2[3] && SQUARE34) || (!A3[0] && B3[0] && SQUARE41) || (!A3[1] && B3[1] && SQUARE42) || (!A3[2] && B3[2] && SQUARE43) || (!A3[3] && B3[3] && SQUARE44));
-	assign unguessed = !Ql && (SQUARE11 || SQUARE12 || SQUARE13 || SQUARE14 || SQUARE21 || SQUARE22 || SQUARE23 || SQUARE24 || SQUARE31 || SQUARE32 || SQUARE33 || SQUARE34 || SQUARE41 || SQUARE42 || SQUARE43 || SQUARE44);
-	assign guess_correct = !Qi && !Ql && ((A0[0] && (B0[0] || Qfo)  && SQUARE11) ||  (A0[1] && (B0[1] || Qfo) && SQUARE12) || (A0[2] && (B0[2] || Qfo) && SQUARE13) || (A0[3] && (B0[3] || Qfo) && SQUARE14) || (A1[0] && (B1[0] || Qfo) && SQUARE21) || (A1[1] && (B1[1] || Qfo) && SQUARE22) || (A1[2] && (B1[2] || Qfo) && SQUARE23) || (A1[3] && (B1[3] || Qfo) && SQUARE24) ||
-		(A2[0] && (B2[0] || Qfo) && SQUARE31) ||  (A2[1] && (B2[1] || Qfo) && SQUARE32) || (A2[2] && (B2[2] || Qfo) && SQUARE33) || (A2[3] && (B2[3] || Qfo) && SQUARE34) || (A3[0] && (B3[0] || Qfo) && SQUARE41) || (A3[1] && (B3[1] || Qfo) && SQUARE42) || (A3[2] && (B3[2] || Qfo) && SQUARE43) || (A3[3] && (B3[3] || Qfo) && SQUARE44));
-	assign selected = Qp && ((X==0 && Y==0 && SQUARE11) ||  (X==0 && Y==1 && SQUARE12) || (X==0 && Y==2 && SQUARE13) || (X==0 && Y==3 && SQUARE14) || (X==1 && Y==0 && SQUARE21) || (X==1 && Y==1 && SQUARE22) || (X==1 && Y==2 && SQUARE23) || (X==1 && Y==3 && SQUARE24) ||
-		(X==2 && Y==0 && SQUARE31) ||  (X==2 && Y==1 && SQUARE32) || (X==2 && Y==2 && SQUARE33) || (X==2 && Y==3 && SQUARE34) || (X==3 && Y==0 && SQUARE41) || (X==3 && Y==1 && SQUARE42) || (X==3 && Y==2 && SQUARE43) || (X==3 && Y==3 && SQUARE44));
+	assign guess_wrong = !Qi && ((((!A0[0] && B0[0])|| Ql) && SQUARE11) ||  (((!A0[1] && B0[1]) || Ql) && SQUARE12) || (((!A0[2] && B0[2]) ||Ql) && SQUARE13) || 
+		(!A0[3] && B0[3] && SQUARE14) || (!A1[0] && B1[0] && SQUARE21) || (!A1[1] && B1[1] && SQUARE22) || (!A1[2] && B1[2] && SQUARE23) || (!A1[3] && B1[3] && SQUARE24) ||
+		(!A2[0] && B2[0] && SQUARE31) ||  (!A2[1] && B2[1] && SQUARE32) || (!A2[2] && B2[2] && SQUARE33) || (!A2[3] && B2[3] && SQUARE34) || (!A3[0] && B3[0] && SQUARE41) || 
+		(!A3[1] && B3[1] && SQUARE42) || (!A3[2] && B3[2] && SQUARE43) || (!A3[3] && B3[3] && SQUARE44));
+	assign unguessed = !Ql && (SQUARE11 || SQUARE12 || SQUARE13 || SQUARE14 || SQUARE21 || SQUARE22 || SQUARE23 || SQUARE24 || SQUARE31 || SQUARE32 || SQUARE33 || SQUARE34 || 
+		SQUARE41 || SQUARE42 || SQUARE43 || SQUARE44);
+	assign guess_correct = !Qi && !Ql && ((A0[0] && (B0[0] || Qfo)  && SQUARE11) ||  (A0[1] && (B0[1] || Qfo) && SQUARE12) || (A0[2] && (B0[2] || Qfo) && SQUARE13) || 
+		(A0[3] && (B0[3] || Qfo) && SQUARE14) || (A1[0] && (B1[0] || Qfo) && SQUARE21) || (A1[1] && (B1[1] || Qfo) && SQUARE22) || (A1[2] && (B1[2] || Qfo) && SQUARE23) || 
+		(A1[3] && (B1[3] || Qfo) && SQUARE24) || (A2[0] && (B2[0] || Qfo) && SQUARE31) ||  (A2[1] && (B2[1] || Qfo) && SQUARE32) || (A2[2] && (B2[2] || Qfo) && SQUARE33) || 
+		(A2[3] && (B2[3] || Qfo) && SQUARE34) || (A3[0] && (B3[0] || Qfo) && SQUARE41) || (A3[1] && (B3[1] || Qfo) && SQUARE42) || (A3[2] && (B3[2] || Qfo) && SQUARE43) || 
+		(A3[3] && (B3[3] || Qfo) && SQUARE44));
+	assign selected = Qp && ((X==0 && Y==0 && SQUARE11) ||  (X==0 && Y==1 && SQUARE12) || (X==0 && Y==2 && SQUARE13) || (X==0 && Y==3 && SQUARE14) || (X==1 && Y==0 && SQUARE21) || 
+		(X==1 && Y==1 && SQUARE22) || (X==1 && Y==2 && SQUARE23) || (X==1 && Y==3 && SQUARE24) || (X==2 && Y==0 && SQUARE31) ||  (X==2 && Y==1 && SQUARE32) || 
+		(X==2 && Y==2 && SQUARE33) || (X==2 && Y==3 && SQUARE34) || (X==3 && Y==0 && SQUARE41) || (X==3 && Y==1 && SQUARE42) || (X==3 && Y==2 && SQUARE43) || (X==3 && Y==3 && SQUARE44));
 
 
 

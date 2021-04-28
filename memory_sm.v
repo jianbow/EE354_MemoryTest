@@ -26,7 +26,7 @@
 //module memory (Xin, Yin, Start, Ack, Clk, Reset, 
 //				Done, Quotient, Remainder, Qi, Qc, Qd);
 				
-module memory (SS_in, INC_in, Start, Ack, Clk, Reset, Right, Left, Up, Down, Select,
+module memory (SS_in, INC_in, Start, Ack, Clk, Reset, Right, Left, Up, Down, Select, outScore,
 				Lives, outA0, outA1, outA2, outA3, outB0, outB1, outB2, outB3, Qi, Qg, Qfo, Qp, Ql, outX, outY, unos);
 				
 //DECLARE ALL MY INPUTS AND OUTPUTS
@@ -39,13 +39,14 @@ output Qi, Qg, Qfo, Qp, Ql;
 output [3:0] outA0, outA1, outA2, outA3, outB0, outB1, outB2, outB3;
 output [1:0] outX, outY;
 output [3:0] unos;
+output [3:0] outScore;
 
 // DECLARE ALL THE LOCAL VARIABLES
 
 reg[4:0] ones;
 reg[4:0] seed;
 reg[4:0] increment;
-reg[4:0] score;
+reg[3:0] score;
 reg[4:0] state;
 // Declare 2, 4X4 Arrays
 
@@ -154,6 +155,7 @@ always @(posedge Clk, posedge Reset)
 				// STATE TRANSITION
 				if(findones == 0) begin
 					state <= GENERATE;
+					score <= score + 1;
 					X <= 0;
 					Y <= 0;
 					end
@@ -193,10 +195,8 @@ always @(posedge Clk, posedge Reset)
 							lives <= lives - 1;
 						end
 					end
-				//if all found, increase score;
-				if(findones == 0)
-					score <= score + 1;
-	          end   
+				end
+				//if all found, increase score; 
 			LOSE:
 	          begin  
 				// STATE TRANSITION
@@ -225,6 +225,7 @@ always @(posedge Clk, posedge Reset)
 	//allow top to see what square we are currently one
 	//assign outX = X;
 	//assign outY = Y;
+	assign outScore = score;
 	assign outX = X;
 	assign outY = Y;
 	assign unos = findones;
